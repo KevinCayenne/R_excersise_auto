@@ -1,23 +1,36 @@
 setwd("c:/Users/acer/Desktop/self_learning _package/")
+dateA <- "2017-11-25"
 
 library(readxl)
 library(ggplot2)
 library(ggpubr)
 library(gtools)
 library(gridExtra)
+library(plyr)
 
+## load files in directory
 File.list = mixedsort(list.files("CYtry"),  decreasing=TRUE)
 combined = paste("./CYtry/", File.list, sep="")
 file.leng = length(combined)
 
-## load files for each sheet
-Day.1.Oximetry <- read_excel(combined[1], sheet = 1)
-Day.1.Activity <- read_excel(combined[1], sheet = 2)
-Day.1.Intake <- read_excel(combined[1], sheet = 3)
+## define variables
+start.value <- 2
 
-Day.2.Oximetry <- read_excel(combined[2], sheet = 1)
-Day.2.Activity <- read_excel(combined[2], sheet = 2)
-Day.2.Intake <- read_excel(combined[2], sheet = 3)
+O.value.tochoose <- 73
+A.value.tochoose <- 220
+I.value.tochoose <- 220
+initset <- O.value.tochoose - 1
+initseta <- A.value.tochoose - 1
+initseti <- I.value.tochoose - 1
+
+## load files for each sheet
+Day.1.Oximetry <- read_excel(combined[start.value], sheet = 1)
+Day.1.Activity <- read_excel(combined[start.value], sheet = 2)
+Day.1.Intake <- read_excel(combined[start.value], sheet = 3)
+
+Day.2.Oximetry <- read_excel(combined[start.value+1], sheet = 1)
+Day.2.Activity <- read_excel(combined[start.value+1], sheet = 2)
+Day.2.Intake <- read_excel(combined[start.value+1], sheet = 3)
 
 OximetryA <- list()
 OximetryA[[1]] <- Day.1.Oximetry
@@ -32,6 +45,23 @@ IntakeA[[1]] <- Day.1.Intake
 IntakeA[[2]] <- Day.2.Intake
 
 OximetryCom <- list()
+ActivityCom <- list()
+IntakeCom <- list()
+
+## decide which value to begin 
+which.first <- function(timeH){
+  i <- 1
+  k <- 1
+  Tpoint <- 13 # set the begin time
+  while(i < Tpoint){
+    if (timeH[k] >= Tpoint){
+      i <- timeH[k]
+    } else {
+      k <- k+1
+    }
+  }
+  return(list(k,i))
+}  
 
 for (i in 1:length(OximetryA)){
   
@@ -57,7 +87,7 @@ for (i in 1:length(OximetryA)){
              , tz="GMT")
   
   ht <- as.POSIXct(ht * (60*60*24)
-             , origin="2017-11-25"
+             , origin=dateA
              , tz="GMT")
   
   ## query out the time value for determination data type
@@ -67,28 +97,12 @@ for (i in 1:length(OximetryA)){
   ## check point
   head(tt)
   head(h.str)
-  
-  ## decide which value to begin 
-  which.first <- function(timeH){
-    i <- 1
-    k <- 1
-    Tpoint <- 13 # set the begin time
-    while(i < Tpoint){
-      if (timeH[k] >= Tpoint){
-        i <- timeH[k]
-      } else {
-        k <- k+1
-      }
-    }
-    return(list(k,i))
-  }  
-  
+
   ## get the first value
   beginv <- which.first(h.str)
   begi <- beginv[[1]]
   
   ## set dark label: 1, light label: 2
-  initset <- 72
   lenR <- length(OximetryR)
   
   OximetryR[begi:(begi+initset),lenR+1] <- 1 
@@ -108,23 +122,234 @@ for (i in 1:length(OximetryA)){
   OximetryCom[[i]] <- OximetryR
 }
 
+for (i in 1:length(ActivityA)){
+  
+  Activity <- ActivityA[[i]]
+  ## delete rows, cols, and revised the dataframe
+  ActivityR <- as.data.frame(Activity[-c(1:20),-c(1:4)])
+  colnames(ActivityR) <- c(ActivityR[1,])
+  ActivityR <- ActivityR[-1,]
+  
+  ## change time to numeric
+  ActivityR$`Absolute time` <- as.numeric(ActivityR$`Absolute time`)
+  ActivityR$`Relative time` <- as.numeric(ActivityR$`Relative time`)
+  
+  ## make the time correct!
+  tta <- ActivityR$`Relative time` + as.numeric(Activity[4,2]) + as.numeric(Activity[5,2])
+  hta <- ActivityR$`Relative time` + as.numeric(Activity[5,2])
+  
+  ## change to the normalise time 
+  tta <- as.POSIXct(tta * (60*60*24)
+                   , origin="1899-12-30"
+                   , tz="GMT")
+  
+  hta <- as.POSIXct(hta * (60*60*24)
+                   , origin=dateA
+                   , tz="GMT")
+  
+  ## query out the time value for determination data type
+  h.stra <- as.numeric(format(tta, "%H")) +
+    as.numeric(format(tta, "%M"))/60
+  
+  ## check point
+  head(tta)
+  head(h.stra)
+
+  ## get the first value
+  beginva <- which.first(h.stra)
+  begia <- beginva[[1]]
+  
+  ## set dark label: 1, light label: 2
+  lenRa <- length(ActivityR)
+  
+  ActivityR[begia:(begia+initseta),lenRa+1] <- 1 
+  ActivityR[(begia+initseta+1):(begia+initseta+1+initseta),lenRa+1] <- 2
+  colnames(ActivityR)[lenRa+1] <- c("DayTag")
+  
+  ## add normalised time column and day tag
+  ActivityR$RealTime <- tta
+  ActivityR$Days <- i
+  ActivityR$HoursT <- h.stra
+  
+  #total_Oximetry$HoursT[total_Oximetry$HoursT>=13] <- -total_Oximetry$HoursT
+  
+  ## remove NA rows
+  ActivityR <- ActivityR[!is.na(ActivityR$DayTag),]
+  
+  ActivityCom[[i]] <- ActivityR
+}
+
+for (i in 1:length(IntakeA)){
+  
+  Intake <- IntakeA[[i]]
+  ## delete rows, cols, and revised the dataframe
+  IntakeR <- as.data.frame(Intake[-c(1:20),-c(1:8)])
+  
+  colnames(IntakeR) <- c(IntakeR[1,])
+  IntakeR <- IntakeR[-1,]
+  
+  ## change time to numeric
+  IntakeR$`Absolute time` <- as.numeric(IntakeR$`Absolute time`)
+  IntakeR$`Relative time` <- as.numeric(IntakeR$`Relative time`)
+  
+  ## make the time correct!
+  tti <- IntakeR$`Relative time` + as.numeric(Intake[4,2]) + as.numeric(Intake[5,2])
+  hti <- IntakeR$`Relative time` + as.numeric(Intake[5,2])
+  
+  ## change to the normalise time 
+  tti <- as.POSIXct(tti * (60*60*24)
+                   , origin="1899-12-30"
+                   , tz="GMT")
+  
+  hti <- as.POSIXct(hti * (60*60*24)
+                   , origin = dateA
+                   , tz="GMT")
+  
+  ## query out the time value for determination data type
+  h.stri <- as.numeric(format(tti, "%H")) +
+    as.numeric(format(tti, "%M"))/60
+  
+  ## check point
+  head(tti)
+  head(h.stri)
+
+  ## get the first value
+  beginvi <- which.first(h.stri)
+  begii <- beginvi[[1]]
+  
+  ## set dark label: 1, light label: 2
+  lenRi <- length(IntakeR)
+  
+  IntakeR[begii:(begii+initseti),lenRi+1] <- 1 
+  IntakeR[(begii+initseti+1):(begii+initseti+1+initseti),lenRi+1] <- 2
+  colnames(IntakeR)[lenRi+1] <- c("DayTag")
+  
+  ## add normalised time column and day tag
+  IntakeR$RealTime <- tti
+  IntakeR$Days <- i
+  IntakeR$HoursT <- h.stri
+  
+  #total_Oximetry$HoursT[total_Oximetry$HoursT>=13] <- -total_Oximetry$HoursT
+  
+  ## remove NA rows
+  IntakeR <- IntakeR[!is.na(IntakeR$DayTag),]
+  
+  IntakeCom[[i]] <- IntakeR
+}
+
 total_Oximetry <- rbind(OximetryCom[[1]], OximetryCom[[2]])
+total_Activity <- rbind(ActivityCom[[1]], ActivityCom[[2]])
+total_Intake <- rbind(IntakeCom[[1]], IntakeCom[[2]])
+
+## change data type
 for (i in 3:14){
   total_Oximetry[,i] <- as.numeric(total_Oximetry[,i])
 }
+for (i in 3:4){
+  total_Activity[,i] <- as.numeric(total_Activity[,i])
+}
+for (i in 3:8){
+  total_Intake[,i] <- as.numeric(total_Intake[,i])
+}
+
+## create columns
 total_Oximetry$DayTag <- as.factor(total_Oximetry$DayTag)
 total_Oximetry$Days <- as.factor(total_Oximetry$Days)
+total_Oximetry$sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)])))
 
-total_Oximetry$sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:146]), as.character(total_Oximetry$RealTime[1:146])))
-  
+total_Activity$DayTag <- as.factor(total_Activity$DayTag)
+total_Activity$Days <- as.factor(total_Activity$Days)
+total_Activity$sameTime <- as.POSIXct(c(as.character(total_Activity$RealTime[1:(A.value.tochoose*2)]), as.character(total_Activity$RealTime[1:(A.value.tochoose*2)])))
+
+total_Intake$DayTag <- as.factor(total_Intake$DayTag)
+total_Intake$Days <- as.factor(total_Intake$Days)
+total_Intake$sameTime <- as.POSIXct(c(as.character(total_Intake$RealTime[1:(I.value.tochoose*2)]), as.character(total_Intake$RealTime[1:(I.value.tochoose*2)])))
+
+
+## create dataframe for plot
+
 for(i in 3:9){
+
+  sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:(value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(value.tochoose*2)])))
+  Days <- as.factor(rep(c("First", "Second","Mean"), c(146, 146, 146)))
+  levels(Days) <- list(First = "First", Second = "Second", Mean = "Mean")
+  
+  Ap <- as.numeric(tapply(total_Oximetry[,i], total_Oximetry$sameTime, mean))
+  Ap <- c(total_Oximetry[,i], Ap)
+  tempdf <- data.frame(Ap, sameTime, Days)
+  
+  bardf <- aggregate(total_Oximetry[,i], list(total_Oximetry$DayTag, total_Oximetry$Days), sum)
+  bardf.2 <- aggregate(total_Oximetry[,i], list(total_Oximetry$Days), sum)
+  namedf <- c("L/D", "Day", "Sum")
+  colnames(bardf) <- namedf
+  
+  bardf.2 <- cbind(c(3,3), bardf.2)
+  colnames(bardf.2) <- namedf
+  bardf.2$`L/D` <- as.factor(bardf.2$`L/D`)
+  bardft <- rbind(bardf, bardf.2)
+           
+  p1 <- ggplot(total_Oximetry, aes(sameTime, total_Oximetry[,i], group = Days, color = Days)) + 
+        geom_point() +
+        geom_line() +
+        geom_vline(xintercept=13) +
+        ylab(colnames(total_Oximetry[i])) +
+        labs(title = sprintf("Oximetry_dot_%s", colnames(total_Oximetry[i]))) +
+        theme(plot.title = element_text(hjust = 0.5))
+
+  p2 <- ggplot(tempdf, aes(sameTime, Ap, group = Days, color = Days)) + 
+        geom_point() +
+        geom_line() +
+        geom_vline(xintercept=13) +
+        theme_bw() +
+        ylab(colnames(total_Oximetry[i])) +
+        labs(title = sprintf("Oximetry_dot_%s", colnames(total_Oximetry[i]))) +
+        theme(plot.title = element_text(hjust = 0.5))
+  
+  p3 <- ggplot(tempdf, aes(sameTime, Ap, group = Days, color = Days)) + 
+        geom_point() +
+        geom_line() +
+        geom_vline(xintercept=13) +
+        theme_bw() +
+        ylab(colnames(total_Oximetry[i])) +
+        labs(title = sprintf("Oximetry_dot_%s", colnames(total_Oximetry[i]))) +
+        theme(plot.title = element_text(hjust = 0.5))
+  
+  
+  # print(
+  #   totalp <- ggarrange(p1, p2, ncol = 2, nrow = 1)
+  #   )
+
+  bar1 <- ggplot(bardft, aes(Day, Sum, group = bardft$`L/D`, fill = bardft$`L/D`)) +
+                geom_bar(stat = "identity",  position = position_dodge(.9)) +
+                scale_fill_manual(values=c("#F0E442", "#999999", "#0072B2"), labels =c("Light", "Dark", "Total")) +
+                labs(title = sprintf("Oximetry_Sum_%s", colnames(total_Oximetry[i]))) +
+                theme_bw() + 
+                theme(plot.title = element_text(hjust = 0.5)) +
+                guides(fill=guide_legend(title="LorD\n")) 
+  
+  bardf2 <- aggregate(total_Oximetry[,i], list(total_Oximetry$DayTag, total_Oximetry$Days), mean)
+  bardf2.2 <- aggregate(total_Oximetry[,i], list(total_Oximetry$Days), mean)
+  namedf2 <- c("L/D", "Day", "Sum")
+  colnames(bardf2) <- namedf2
+  
+  bardf2.2 <- cbind(c(3,3), bardf2.2)
+  colnames(bardf2.2) <- namedf2
+  bardf2.2$`L/D` <- as.factor(bardf2.2$`L/D`)
+  bardft2 <- rbind(bardf2, bardf2.2)
+  
+  bar2 <- ggplot(bardft2, aes(Day, Sum, group = bardft$`L/D`, fill = bardft$`L/D`)) +
+                geom_bar(stat = "identity",  position = position_dodge(.9)) +
+                scale_fill_manual(values=c("#F0E442", "#999999", "#0072B2"), labels =c("Light", "Dark", "Mean")) +
+                labs(title = sprintf("Oximetry_Mean_%s", colnames(total_Oximetry[i]))) +
+                theme_bw() + 
+                theme(plot.title = element_text(hjust = 0.5)) +
+                guides(fill=guide_legend(title="LorD\n")) 
   print(
-    ggplot(total_Oximetry, aes(sameTime, total_Oximetry[,i], group = Days, color = Days)) + 
-    geom_point() +
-    geom_line() +
-    geom_vline(xintercept=13) +
-    ylab(colnames(total_Oximetry[i])) +
-    labs(title = sprintf("Oximetry_%s", colnames(total_Oximetry[i]))) +
-    theme(plot.title = element_text(hjust = 0.5))
-    )
+    totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
+  )
+  
 }
+
+
+
+
