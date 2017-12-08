@@ -119,7 +119,7 @@ total_Oximetry$sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:1
   
 for(i in 3:9){
   print(
-    ggplot(total_Oximetry, aes(RealTime, total_Oximetry[,i], group = Days, color = Days)) + 
+    ggplot(total_Oximetry, aes(sameTime, total_Oximetry[,i], group = Days, color = Days)) + 
     geom_point() +
     geom_line() +
     geom_vline(xintercept=13) +
