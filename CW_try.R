@@ -1,6 +1,6 @@
 setwd("c:/Users/acer/Desktop/self_learning _package/")
-dateA <- "2017-11-25"
 
+## library packages ----
 library(readxl)
 library(ggplot2)
 library(ggpubr)
@@ -8,14 +8,15 @@ library(gtools)
 library(gridExtra)
 library(plyr)
 
-## load files in directory
+## load files in directory ----
 File.list = mixedsort(list.files("CYtry"),  decreasing=TRUE)
 combined = paste("./CYtry/", File.list, sep="")
 file.leng = length(combined)
 
-## define variables
-start.value <- 2
+## define variables ----
+dateA <- "2017-11-25"
 
+start.value <- 2
 O.value.tochoose <- 73
 A.value.tochoose <- 220
 I.value.tochoose <- 220
@@ -23,7 +24,8 @@ initset <- O.value.tochoose - 1
 initseta <- A.value.tochoose - 1
 initseti <- I.value.tochoose - 1
 
-## load files for each sheet
+
+## load files for each sheet ----
 Day.1.Oximetry <- read_excel(combined[start.value], sheet = 1)
 Day.1.Activity <- read_excel(combined[start.value], sheet = 2)
 Day.1.Intake <- read_excel(combined[start.value], sheet = 3)
@@ -48,7 +50,8 @@ OximetryCom <- list()
 ActivityCom <- list()
 IntakeCom <- list()
 
-## decide which value to begin 
+
+## functions ----
 which.first <- function(timeH){
   i <- 1
   k <- 1
@@ -62,7 +65,7 @@ which.first <- function(timeH){
   }
   return(list(k,i))
 }  
-
+## decide which value to begin ----
 for (i in 1:length(OximetryA)){
   
   Oximetry <- OximetryA[[i]]
@@ -121,7 +124,6 @@ for (i in 1:length(OximetryA)){
 
   OximetryCom[[i]] <- OximetryR
 }
-
 for (i in 1:length(ActivityA)){
   
   Activity <- ActivityA[[i]]
@@ -178,7 +180,6 @@ for (i in 1:length(ActivityA)){
   
   ActivityCom[[i]] <- ActivityR
 }
-
 for (i in 1:length(IntakeA)){
   
   Intake <- IntakeA[[i]]
@@ -237,11 +238,12 @@ for (i in 1:length(IntakeA)){
   IntakeCom[[i]] <- IntakeR
 }
 
+## combined days ----
 total_Oximetry <- rbind(OximetryCom[[1]], OximetryCom[[2]])
 total_Activity <- rbind(ActivityCom[[1]], ActivityCom[[2]])
 total_Intake <- rbind(IntakeCom[[1]], IntakeCom[[2]])
 
-## change data type
+## change data type ----
 for (i in 3:14){
   total_Oximetry[,i] <- as.numeric(total_Oximetry[,i])
 }
@@ -252,7 +254,7 @@ for (i in 3:8){
   total_Intake[,i] <- as.numeric(total_Intake[,i])
 }
 
-## create columns
+## create columns and change to factor ----
 total_Oximetry$DayTag <- as.factor(total_Oximetry$DayTag)
 total_Oximetry$Days <- as.factor(total_Oximetry$Days)
 total_Oximetry$sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)])))
@@ -265,9 +267,7 @@ total_Intake$DayTag <- as.factor(total_Intake$DayTag)
 total_Intake$Days <- as.factor(total_Intake$Days)
 total_Intake$sameTime <- as.POSIXct(c(as.character(total_Intake$RealTime[1:(I.value.tochoose*2)]), as.character(total_Intake$RealTime[1:(I.value.tochoose*2)])))
 
-
-## create dataframe for plot
-
+## create dataframe for plot ----
 for(i in 3:9){
 
   sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:(value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(value.tochoose*2)])))
