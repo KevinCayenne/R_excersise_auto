@@ -16,7 +16,7 @@ file.leng = length(combined)
 ## define variables ----
 dateA <- "2017-11-25"
 
-start.value <- 2
+start.value <- 3
 O.value.tochoose <- 73
 A.value.tochoose <- 220
 I.value.tochoose <- 220
@@ -266,6 +266,9 @@ total_Intake$DayTag <- as.factor(total_Intake$DayTag)
 total_Intake$Days <- as.factor(total_Intake$Days)
 total_Intake$sameTime <- as.POSIXct(c(as.character(total_Intake$RealTime[1:(I.value.tochoose*2)]), as.character(total_Intake$RealTime[1:(I.value.tochoose*2)])))
 
+colnames(total_Oximetry)[3:8] <- c("VO2(ml_min_kg075)", "VCO2(ml_min_kg075)", "EE(Kcal_day_kg075)", "VO2(ml_min)", "VCO2(ml_min)", "EE(Kcal_day)")
+colnames(total_Intake)[5:8] <- c("Food_Cons_rate(g_g)", "Drink(ml)", "Consumption(ml)", "Drink_Cons_rate(ml_g)")
+
 ## Oximetry plot ----
 for(i in 3:9){
   
@@ -346,7 +349,7 @@ for(i in 3:9){
                 theme(plot.title = element_text(hjust = 0.5)) +
                 guides(fill=guide_legend(title="LorD\n")) 
   
-  png(sprintf("%s.png", colnames(total_Oximetry[i]), width = 1200, height = 1200))
+  jpeg(filename = sprintf("c:/Users/acer/Desktop/self_learning _package/CYtry/image/Oximetry/%s.jpg", colnames(total_Oximetry[i])), width = 1200, height = 1000)
   print(
     totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
   )
@@ -426,11 +429,12 @@ for(i in 3:3){
     theme(plot.title = element_text(hjust = 0.5)) +
     guides(fill=guide_legend(title="LorD\n")) 
   
-  png(sprintf("%s.png", colnames(total_Activity[i]), width = 1200, height = 1200))
+  jpeg(filename = sprintf("c:/Users/acer/Desktop/self_learning _package/CYtry/image/Activity/Activity.jpg"), width = 1200, height = 1000)
   print(
     totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
   )
   dev.off()
+  
 }
 ## Intake plot ----
 for(i in 3:8){
@@ -511,7 +515,7 @@ for(i in 3:8){
     theme(plot.title = element_text(hjust = 0.5)) +
     guides(fill=guide_legend(title="LorD\n")) 
   
-  png(sprintf("%s.png", colnames(total_Intake[i]), width = 1200, height = 1200))
+  jpeg(filename = sprintf("c:/Users/acer/Desktop/self_learning _package/CYtry/image/Intake/%s.jpg", colnames(total_Intake[i])), width = 1200, height = 1000)
   print(
     totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
   )
