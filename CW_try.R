@@ -345,10 +345,12 @@ for(i in 3:9){
                 theme_bw() + 
                 theme(plot.title = element_text(hjust = 0.5)) +
                 guides(fill=guide_legend(title="LorD\n")) 
+  
+  png(sprintf("%s.png", colnames(total_Oximetry[i]), width = 1200, height = 1200))
   print(
     totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
   )
-  
+  dev.off()
 }
 ## Activity plot ----
 for(i in 3:3){
@@ -424,10 +426,11 @@ for(i in 3:3){
     theme(plot.title = element_text(hjust = 0.5)) +
     guides(fill=guide_legend(title="LorD\n")) 
   
+  png(sprintf("%s.png", colnames(total_Activity[i]), width = 1200, height = 1200))
   print(
     totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
   )
-  
+  dev.off()
 }
 ## Intake plot ----
 for(i in 3:8){
@@ -508,14 +511,10 @@ for(i in 3:8){
     theme(plot.title = element_text(hjust = 0.5)) +
     guides(fill=guide_legend(title="LorD\n")) 
   
+  png(sprintf("%s.png", colnames(total_Intake[i]), width = 1200, height = 1200))
   print(
     totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
   )
+  dev.off()
   
 }
-
-
-
-
-
-
