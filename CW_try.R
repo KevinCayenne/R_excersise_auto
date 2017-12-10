@@ -24,7 +24,6 @@ initset <- O.value.tochoose - 1
 initseta <- A.value.tochoose - 1
 initseti <- I.value.tochoose - 1
 
-
 ## load files for each sheet ----
 Day.1.Oximetry <- read_excel(combined[start.value], sheet = 1)
 Day.1.Activity <- read_excel(combined[start.value], sheet = 2)
@@ -267,11 +266,13 @@ total_Intake$DayTag <- as.factor(total_Intake$DayTag)
 total_Intake$Days <- as.factor(total_Intake$Days)
 total_Intake$sameTime <- as.POSIXct(c(as.character(total_Intake$RealTime[1:(I.value.tochoose*2)]), as.character(total_Intake$RealTime[1:(I.value.tochoose*2)])))
 
-## create dataframe for plot ----
+## Oximetry plot ----
 for(i in 3:9){
+  
+  DO <- O.value.tochoose*2
 
-  sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:(value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(value.tochoose*2)])))
-  Days <- as.factor(rep(c("First", "Second","Mean"), c(146, 146, 146)))
+  sameTime <- as.POSIXct(c(as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)]), as.character(total_Oximetry$RealTime[1:(O.value.tochoose*2)])))
+  Days <- as.factor(rep(c("First", "Second","Mean"), c(DO, DO, DO)))
   levels(Days) <- list(First = "First", Second = "Second", Mean = "Mean")
   
   Ap <- as.numeric(tapply(total_Oximetry[,i], total_Oximetry$sameTime, mean))
@@ -349,6 +350,171 @@ for(i in 3:9){
   )
   
 }
+## Activity plot ----
+for(i in 3:3){
+  
+  DA <- A.value.tochoose*2
+  
+  sameTime <- as.POSIXct(c(as.character(total_Activity$RealTime[1:(A.value.tochoose*2)]), as.character(total_Activity$RealTime[1:(A.value.tochoose*2)]), as.character(total_Activity$RealTime[1:(A.value.tochoose*2)])))
+  Days <- as.factor(rep(c("First", "Second","Mean"), c(DA, DA, DA)))
+  levels(Days) <- list(First = "First", Second = "Second", Mean = "Mean")
+  
+  Ap <- as.numeric(tapply(total_Activity[,i], total_Activity$sameTime, mean))
+  Ap <- c(total_Activity[,i], Ap)
+  tempdf <- data.frame(Ap, sameTime, Days)
+  
+  bardf <- aggregate(total_Activity[,i], list(total_Activity$DayTag, total_Activity$Days), sum)
+  bardf.2 <- aggregate(total_Activity[,i], list(total_Activity$Days), sum)
+  namedf <- c("L/D", "Day", "Sum")
+  colnames(bardf) <- namedf
+  
+  bardf.2 <- cbind(c(3,3), bardf.2)
+  colnames(bardf.2) <- namedf
+  bardf.2$`L/D` <- as.factor(bardf.2$`L/D`)
+  bardft <- rbind(bardf, bardf.2)
+  
+  p1 <- ggplot(total_Activity, aes(sameTime, total_Activity[,i], group = Days, color = Days)) + 
+    geom_line() +
+    ylab(colnames(total_Activity[i])) +
+    labs(title = sprintf("Activity_dot_%s", colnames(total_Activity[i]))) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  p2 <- ggplot(tempdf, aes(sameTime, Ap, group = Days, color = Days)) + 
+    geom_line() +
+    theme_bw() +
+    ylab(colnames(total_Activity[i])) +
+    labs(title = sprintf("Activity_dot_%s", colnames(total_Activity[i]))) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  p3 <- ggplot(tempdf, aes(sameTime, Ap, group = Days, color = Days)) + 
+    geom_line() +
+    theme_bw() +
+    ylab(colnames(total_Activity[i])) +
+    labs(title = sprintf("Activity_dot_%s", colnames(total_Activity[i]))) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  
+  # print(
+  #   totalp <- ggarrange(p1, p2, ncol = 2, nrow = 1)
+  #   )
+  
+  bar1 <- ggplot(bardft, aes(Day, Sum, group = bardft$`L/D`, fill = bardft$`L/D`)) +
+    geom_bar(stat = "identity",  position = position_dodge(.9)) +
+    scale_fill_manual(values=c("#F0E442", "#999999", "#0072B2"), labels =c("Light", "Dark", "Total")) +
+    labs(title = sprintf("Activity_Sum_%s", colnames(total_Activity[i]))) +
+    theme_bw() + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    guides(fill=guide_legend(title="LorD\n")) 
+  
+  bardf2 <- aggregate(total_Activity[,i], list(total_Activity$DayTag, total_Activity$Days), mean)
+  bardf2.2 <- aggregate(total_Activity[,i], list(total_Activity$Days), mean)
+  namedf2 <- c("L/D", "Day", "Sum")
+  colnames(bardf2) <- namedf2
+  
+  bardf2.2 <- cbind(c(3,3), bardf2.2)
+  colnames(bardf2.2) <- namedf2
+  bardf2.2$`L/D` <- as.factor(bardf2.2$`L/D`)
+  bardft2 <- rbind(bardf2, bardf2.2)
+  
+  bar2 <- ggplot(bardft2, aes(Day, Sum, group = bardft$`L/D`, fill = bardft$`L/D`)) +
+    geom_bar(stat = "identity",  position = position_dodge(.9)) +
+    scale_fill_manual(values=c("#F0E442", "#999999", "#0072B2"), labels =c("Light", "Dark", "Mean")) +
+    labs(title = sprintf("Activity_Mean_%s", colnames(total_Activity[i]))) +
+    theme_bw() + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    guides(fill=guide_legend(title="LorD\n")) 
+  
+  print(
+    totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
+  )
+  
+}
+## Intake plot ----
+for(i in 3:8){
+  
+  DI <- I.value.tochoose*2
+  
+  sameTime <- as.POSIXct(c(as.character(total_Intake$RealTime[1:(I.value.tochoose*2)]), as.character(total_Intake$RealTime[1:(I.value.tochoose*2)]), as.character(total_Intake$RealTime[1:(I.value.tochoose*2)])))
+  Days <- as.factor(rep(c("First", "Second","Mean"), c(DI, DI, DI)))
+  levels(Days) <- list(First = "First", Second = "Second", Mean = "Mean")
+  
+  Ap <- as.numeric(tapply(total_Intake[,i], total_Intake$sameTime, mean))
+  Ap <- c(total_Intake[,i], Ap)
+  tempdf <- data.frame(Ap, sameTime, Days)
+  
+  bardf <- aggregate(total_Intake[,i], list(total_Intake$DayTag, total_Intake$Days), sum)
+  bardf.2 <- aggregate(total_Intake[,i], list(total_Intake$Days), sum)
+  namedf <- c("L/D", "Day", "Sum")
+  colnames(bardf) <- namedf
+  
+  bardf.2 <- cbind(c(3,3), bardf.2)
+  colnames(bardf.2) <- namedf
+  bardf.2$`L/D` <- as.factor(bardf.2$`L/D`)
+  bardft <- rbind(bardf, bardf.2)
+  
+  p1 <- ggplot(total_Intake, aes(sameTime, total_Intake[,i], group = Days, color = Days)) + 
+    geom_point() +
+    geom_line() +
+    ylab(colnames(total_Intake[i])) +
+    labs(title = sprintf("Intake_dot_%s", colnames(total_Intake[i]))) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  p2 <- ggplot(tempdf, aes(sameTime, Ap, group = Days, color = Days)) + 
+    geom_point() +
+    geom_line() +
+    geom_vline(xintercept=13) +
+    theme_bw() +
+    ylab(colnames(total_Intake[i])) +
+    labs(title = sprintf("Intake_dot_%s", colnames(total_Intake[i]))) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  p3 <- ggplot(tempdf, aes(sameTime, Ap, group = Days, color = Days)) + 
+    geom_point() +
+    geom_line() +
+    geom_vline(xintercept=13) +
+    theme_bw() +
+    ylab(colnames(total_Intake[i])) +
+    labs(title = sprintf("Intake_dot_%s", colnames(total_Intake[i]))) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  
+  # print(
+  #   totalp <- ggarrange(p1, p2, ncol = 2, nrow = 1)
+  #   )
+  
+  bar1 <- ggplot(bardft, aes(Day, Sum, group = bardft$`L/D`, fill = bardft$`L/D`)) +
+    geom_bar(stat = "identity",  position = position_dodge(.9)) +
+    scale_fill_manual(values=c("#F0E442", "#999999", "#0072B2"), labels =c("Light", "Dark", "Total")) +
+    labs(title = sprintf("Intake_Sum_%s", colnames(total_Intake[i]))) +
+    theme_bw() + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    guides(fill=guide_legend(title="LorD\n")) 
+  
+  bardf2 <- aggregate(total_Intake[,i], list(total_Intake$DayTag, total_Intake$Days), mean)
+  bardf2.2 <- aggregate(total_Intake[,i], list(total_Intake$Days), mean)
+  namedf2 <- c("L/D", "Day", "Sum")
+  colnames(bardf2) <- namedf2
+  
+  bardf2.2 <- cbind(c(3,3), bardf2.2)
+  colnames(bardf2.2) <- namedf2
+  bardf2.2$`L/D` <- as.factor(bardf2.2$`L/D`)
+  bardft2 <- rbind(bardf2, bardf2.2)
+  
+  bar2 <- ggplot(bardft2, aes(Day, Sum, group = bardft$`L/D`, fill = bardft$`L/D`)) +
+    geom_bar(stat = "identity",  position = position_dodge(.9)) +
+    scale_fill_manual(values=c("#F0E442", "#999999", "#0072B2"), labels =c("Light", "Dark", "Mean")) +
+    labs(title = sprintf("Intake_Mean_%s", colnames(total_Intake[i]))) +
+    theme_bw() + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    guides(fill=guide_legend(title="LorD\n")) 
+  
+  print(
+    totalp2 <- ggarrange(p1, p2, bar1, bar2, ncol = 2, nrow = 2)
+  )
+  
+}
+
+
 
 
 
