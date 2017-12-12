@@ -2,6 +2,7 @@ setwd("c:/Users/acer/Desktop/self_learning _package/")
 
 ## library packages ----
 library(readxl)
+library(magrittr)
 library(ggplot2)
 library(ggpubr)
 library(gtools)
